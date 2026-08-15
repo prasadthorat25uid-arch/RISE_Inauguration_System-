@@ -1,7 +1,7 @@
 <p align="center">
   <img src="assets/rise-poster.jpg" alt="RISE - Research & Innovation Society for Emerging Intelligence, Sanjivani University" width="100%">
 </p>
-
+ 
 # RISE Inauguration System
 
 Built by **RISE — Research & Innovation Society for Emerging Intelligence**, Sanjivani University.
