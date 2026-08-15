@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RISE Inauguration — Controller</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="firebase-bridge.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+  --navy-950:#05070f;
+  --navy-900:#0b1330;
+  --navy-800:#111d40;
+  --navy-700:#1c2b56;
+  --navy-600:#28386e;
+  --gold:#f0a93d;
+  --gold-light:#ffd76a;
+  --orange:#e8790a;
+  --cream:#f5f1e8;
+  --ink-dim:#a9b3d1;
+  --green:#22c55e;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 0 0 40px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(240,169,61,.12), transparent 45%),
+    linear-gradient(180deg, var(--navy-950), var(--navy-900) 55%);
+  color: var(--cream);
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+/* ===== Sticky header ===== */
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px;
+  background: rgba(5,7,15,.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(240,169,61,.15);
+}
+.brand{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand svg{ width: 18px; height: 18px; fill: var(--gold-light); flex-shrink: 0; }
+.brand-text{ text-align: left; line-height: 1.15; }
+.brand-text .kicker{
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  display: block;
+}
+.brand-text .title{
+  font-family:'Sora',sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--cream);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 30px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #3a3f52;
+  border: 1px solid rgba(255,255,255,.08);
+  white-space: nowrap;
+}
+.status .dot{
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #9aa0b4;
+}
+.status.connected{ background: rgba(34,197,94,.14); border-color: rgba(34,197,94,.45); color: #7bf1a0; }
+.status.connected .dot{ background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+/* ===== Poster preview strip ===== */
+.poster-strip{
+  margin: 16px 18px 0;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(240,169,61,.2);
+}
+.poster-strip img{
+  display: block;
+  width: 100%;
+  height: 108px;
+  object-fit: cover;
+  filter: brightness(.55) saturate(1.1);
+}
+.poster-strip .overlay{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, transparent 40%, rgba(5,7,15,.85));
+}
+.poster-strip .overlay span{
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold-light);
+  letter-spacing: .02em;
+}
+
+main{
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 18px;
+}
+
+.section{
+  margin-top: 22px;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: var(--gold-light);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+}
+.section-title::after{
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,.08);
+}
+
+/* ===== Curtain toggle ===== */
+.curtain-toggle{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, var(--navy-800), var(--navy-700));
+  border: 1px solid rgba(255,255,255,.08);
+}
+.curtain-toggle .label{
+  text-align: left;
+}
+.curtain-toggle .label .state{
+  font-family:'Sora',sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+}
+.curtain-toggle .label .hint{
+  font-size: 11.5px;
+  color: var(--ink-dim);
+  margin-top: 2px;
+}
+.switch{
+  position: relative;
+  width: 64px;
+  height: 34px;
+  border-radius: 20px;
+  border: none;
+  background: #3a3f52;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .25s ease;
+}
+.switch::after{
+  content: "";
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--cream);
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+.switch.open{ background: linear-gradient(135deg, #147d35, #22c55e); }
+.switch.open::after{ transform: translateX(30px); }
+
+/* ===== Poster nav ===== */
+.nav-row{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nav-row button{
+  flex: 1;
+  min-height: 54px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--navy-700), var(--navy-600));
+  color: var(--cream);
+  font-family:'Inter',Arial,sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s ease, filter .15s ease;
+}
+.nav-row button:active{ transform: scale(.95); }
+.nav-row button:hover{ filter: brightness(1.15); }
+.poster-count{
+  min-width: 74px;
+  text-align: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(240,169,61,.08);
+  border: 1px solid rgba(240,169,61,.2);
+  color: var(--gold-light);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ===== Celebration grid ===== */
+.fx-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.fx-grid button{
+  position: relative;
+  min-height: 78px;
+  padding: 10px;
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-family:'Inter',Arial,sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform .15s ease, filter .15s ease;
+}
+.fx-grid button:active{ transform: scale(.95); }
+.fx-grid button:hover{ filter: brightness(1.12); }
+.fx-grid .emoji{ font-size: 22px; display: block; margin-bottom: 4px; }
+
+.confetti-btn{ background: linear-gradient(135deg, #7c2d92, #c2489a); }
+.gold-btn{ background: linear-gradient(135deg, var(--orange), var(--gold)); color: #211400; }
+.fireworks-btn{ background: linear-gradient(135deg, #2c2a63, #6a4fc9); }
+.streamers-btn{ background: linear-gradient(135deg, #0f6a8a, #17b7c9); }
+
+footer{
+  margin-top: 30px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-dim);
+  letter-spacing: .04em;
+}
+
+#fxCanvas{
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24"><path d="M2 21l20-9L2 3v7l14 2-14 2z"/></svg>
+    <div class="brand-text">
+      <span class="kicker">RISE</span>
+      <span class="title">Controller</span>
+    </div>
+  </div>
+  <div class="status" id="status">
+    <span class="dot"></span>
+    <span id="statusText">Connecting</span>
+  </div>
+</div>
+
+<div class="poster-strip">
+  <img src="assets/rise-poster.jpg" alt="RISE poster">
+  <div class="overlay"><span>Rising Sun — From Ideas to Impact</span></div>
+</div>
+
+<main>
+
+  <div class="section">
+    <div class="section-title">Curtain</div>
+    <div class="curtain-toggle">
+      <div class="label">
+        <div class="state" id="curtainStateLabel">Closed</div>
+        <div class="hint">Tap to open or close the stage</div>
+      </div>
+      <button class="switch" id="curtainSwitch" onclick="toggleCurtain()" aria-label="Toggle curtain"></button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Poster</div>
+    <div class="nav-row">
+      <button onclick="previousImage()">⬅ Previous</button>
+      <span class="poster-count" id="imageInfo">Poster 1</span>
+      <button onclick="nextImage()">Next ➡</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Celebration Effects</div>
+    <div class="fx-grid">
+      <button class="confetti-btn" onclick="fireEffect('confetti')">
+        <span class="emoji">🎊</span>Party Popper
+      </button>
+      <button class="gold-btn" onclick="fireEffect('gold')">
+        <span class="emoji">✨</span>Gold Shower
+      </button>
+      <button class="fireworks-btn" onclick="fireEffect('fireworks')">
+        <span class="emoji">🎆</span>Fireworks
+      </button>
+      <button class="streamers-btn" onclick="fireEffect('streamers')">
+        <span class="emoji">🎉</span>Streamers
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<footer>RISE — Research &amp; Innovation Society for Emerging Intelligence, Sanjivani University</footer>
+
+<canvas id="fxCanvas"></canvas>
+
+<script>
+
+/* ================================
+   SOCKET / FIREBASE
+================================ */
+
+const socket = io();
+
+let currentImage = 0;
+let curtainOpen = false;
+
+const statusElement = document.getElementById("status");
+const statusText = document.getElementById("statusText");
+const imageInfo = document.getElementById("imageInfo");
+const curtainSwitch = document.getElementById("curtainSwitch");
+const curtainStateLabel = document.getElementById("curtainStateLabel");
+
+socket.on("connect", () => {
+  statusText.textContent = "Connected";
+  statusElement.classList.add("connected");
+});
+
+socket.on("disconnect", () => {
+  statusText.textContent = "Disconnected";
+  statusElement.classList.remove("connected");
+});
+
+function setCurtainUI(open){
+  curtainOpen = open;
+  curtainSwitch.classList.toggle("open", open);
+  curtainStateLabel.textContent = open ? "Open" : "Closed";
+}
+
+function toggleCurtain(){
+  if (curtainOpen){
+    socket.emit("close-curtain");
+  } else {
+    socket.emit("open-curtain");
+  }
+  setCurtainUI(!curtainOpen);
+}
+
+function nextImage() {
+  currentImage++;
+  updateImageInfo();
+  socket.emit("next-image");
+}
+
+function previousImage() {
+  currentImage--;
+  updateImageInfo();
+  socket.emit("prev-image");
+}
+
+function updateImageInfo() {
+  imageInfo.textContent = `Poster ${currentImage + 1}`;
+}
+
+socket.on("show-image", (index) => {
+  currentImage = Number(index);
+  updateImageInfo();
+});
+
+/* ================================
+   CELEBRATION EFFECTS
+   — fires the real Firebase command
+     (so the display screen reacts)
+     AND plays a local preview here
+     on the phone itself.
+================================ */
+
+function fireEffect(type){
+  socket.emit("celebrate", type);
+  launchLocalPreview(type);
+}
+
+const fxCanvas = document.getElementById("fxCanvas");
+const fxCtx = fxCanvas.getContext("2d");
+
+function resizeFxCanvas(){
+  fxCanvas.width = window.innerWidth;
+  fxCanvas.height = window.innerHeight;
+}
+resizeFxCanvas();
+window.addEventListener("resize", resizeFxCanvas);
+
+let fxParticles = [];
+let fxRunning = false;
+let fxLoopActive = false;
+let fxTimer = null;
+let fxFrame = 0;
+
+const CONFETTI_COLORS = ["#ff1744","#ffea00","#00e676","#2979ff","#d500f9","#ff9100","#ffffff","#ffd700"];
+const GOLD_COLORS = ["#ffd700","#ffe9a8","#fff1c1","#d4af37","#fff8dc"];
+
+function launchLocalPreview(type){
+  clearTimeout(fxTimer);
+  fxParticles = [];
+
+  switch(type){
+    case "confetti": confettiBlast(); break;
+    case "gold": goldShower(); break;
+    case "fireworks": fireworksShow(); break;
+    case "streamers": streamerDrop(); break;
+    default: confettiBlast();
+  }
+
+  fxRunning = true;
+  if (!fxLoopActive){
+    fxLoopActive = true;
+    animateFx();
+  }
+
+  fxTimer = setTimeout(() => {
+    fxRunning = false;
+    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+    fxParticles = [];
+  }, 5000);
+}
+
+function burstFrom(x, y, colors){
+  for (let i = 0; i < 110; i++){
+    const angle = -Math.PI / 2 + (Math.random() - .5) * 1.5;
+    const speed = 7 + Math.random() * 15;
+    fxParticles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      gravity: .18 + Math.random() * .18,
+      drag: .987,
+      size: 4 + Math.random() * 9,
+      rotation: Math.random() * Math.PI,
+      rotationSpeed: (Math.random() - .5) * .4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      life: 1,
+      decay: .0042,
+      shape: Math.random() > .7 ? "circle" : "rectangle"
+    });
+  }
+}
+
+function confettiBlast(){
+  burstFrom(fxCanvas.width * .15, fxCanvas.height * .8, CONFETTI_COLORS);
+  burstFrom(fxCanvas.width * .85, fxCanvas.height * .8, CONFETTI_COLORS);
+}
+
+function goldShower(){
+  for (let i = 0; i < 100; i++){
+    fxParticles.push({
+      x: Math.random() * fxCanvas.width,
+      y: -20 - Math.random() * fxCanvas.height * .5,
+      vx: (Math.random() - .5) * .6,
+      vy: 1.5 + Math.random() * 2.5,
+      gravity: .01,
+      drag: 1,
+      size: 3 + Math.random() * 5,
+      rotation: Math.random() * Math.PI,
+      rotationSpeed: (Math.random() - .5) * .1,
+      color: GOLD_COLORS[Math.floor(Math.random() * GOLD_COLORS.length)],
+      life: 1,
+      decay: .0016,
+      shape: "circle",
+      sway: 1 + Math.random() * 1.5,
+      swayFreq: .01 + Math.random() * .02,
+      swayPhase: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+function fireworksShow(){
+  let launched = 0;
+  const totalBursts = 4;
+  function launchOne(){
+    if (!fxRunning && launched > 0) return;
+    const x = fxCanvas.width * (.2 + Math.random() * .6);
+    const y = fxCanvas.height * (.18 + Math.random() * .35);
+    burstFrom(x, y, CONFETTI_COLORS);
+    launched++;
+    if (launched < totalBursts){
+      setTimeout(launchOne, 450 + Math.random() * 450);
+    }
+  }
+  launchOne();
+}
+
+function streamerDrop(){
+  for (let i = 0; i < 60; i++){
+    fxParticles.push({
+      x: Math.random() * fxCanvas.width,
+      y: -30 - Math.random() * fxCanvas.height * .5,
+      vx: 0,
+      vy: 1.2 + Math.random() * 1.8,
+      gravity: .01,
+      drag: 1,
+      size: 14 + Math.random() * 18,
+      rotation: Math.random() * Math.PI,
+      rotationSpeed: (Math.random() - .5) * .05,
+      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      life: 1,
+      decay: .0014,
+      shape: "ribbon",
+      sway: 2 + Math.random() * 2,
+      swayFreq: .008 + Math.random() * .015,
+      swayPhase: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+function animateFx(){
+  if (!fxRunning && fxParticles.length === 0){
+    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+    fxLoopActive = false;
+    return;
+  }
+
+  fxFrame++;
+  fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+
+  fxParticles.forEach(p => {
+    if (p.sway){
+      p.x += Math.sin(fxFrame * p.swayFreq + p.swayPhase) * p.sway * .1;
+    }
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += p.gravity;
+    p.vx *= p.drag;
+    p.rotation += p.rotationSpeed;
+    p.life -= p.decay;
+
+    fxCtx.save();
+    fxCtx.translate(p.x, p.y);
+    fxCtx.rotate(p.rotation);
+    fxCtx.globalAlpha = Math.max(p.life, 0);
+    fxCtx.fillStyle = p.color;
+
+    if (p.shape === "circle"){
+      fxCtx.beginPath();
+      fxCtx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+      fxCtx.fill();
+    } else if (p.shape === "ribbon"){
+      fxCtx.fillRect(-p.size / 8, -p.size / 2, p.size / 4, p.size);
+    } else {
+      fxCtx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+    }
+    fxCtx.restore();
+  });
+
+  fxParticles = fxParticles.filter(p => p.life > 0 && p.y < fxCanvas.height + 150);
+
+  requestAnimationFrame(animateFx);
+}
+
+</script>
+
+</body>
+
+</html>
