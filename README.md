@@ -8,7 +8,7 @@ Built by **RISE — Research & Innovation Society for Emerging Intelligence**, S
 
 Repo: [github.com/prasadthorat25uid-arch/RISE_Inauguration_System-](https://github.com/prasadthorat25uid-arch/RISE_Inauguration_System-)
 
-A real-time, curtain-reveal presentation system for inauguration ceremonies. A mobile controller drives a projector/display screen over Firebase, so an operator can open the curtain, switch posters, and trigger celebration effects from their phone.
+A real-time, curtain-reveal presentation system for inauguration ceremonies. A mobile controller drives a projector/display screen over Firebase, so an operator can open the curtain, switch posters, and trigger celebration effects from their phone. 
 
 ---
 
