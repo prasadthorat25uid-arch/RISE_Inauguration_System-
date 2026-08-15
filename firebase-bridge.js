@@ -166,7 +166,7 @@
 
       // Ignore duplicate commands
       if (cmd.id === lastCommandId) {
-        return;
+        return; 
       }
 
       // Ignore commands sent by this same device
